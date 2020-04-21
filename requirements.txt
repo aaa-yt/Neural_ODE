@@ -1,1 +1,7 @@
 python-dotenv
+numpy
+scipy
+pandas
+tqdm
+scikit-learn
+matplotlib
