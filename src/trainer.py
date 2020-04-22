@@ -4,11 +4,12 @@ import time
 import csv
 from datetime import datetime
 from logging import getLogger
-from config import Config
 import numpy as np
 from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+from config import Config
 from lib import optimizers
 from model import mean_square_error, accuracy
 from visualize import Visualize
@@ -36,6 +37,7 @@ class Trainer:
         self.compile_model()
         self.dataset = self.load_dataset()
         self.fit(x=self.dataset[0][0], y=self.dataset[0][1], epochs=tc.epoch, validation_data=self.dataset[1], is_visualize=tc.is_visualize, is_accuracy=tc.is_accuracy)
+        self.evaluate(self.dataset[2][0], self.dataset[2][1])
         self.save_model()
         self.save_result()
 
@@ -61,8 +63,8 @@ class Trainer:
             with tqdm(range(n_train), desc="[Epoch: {}]".format(epoch+1)) as pbar:
                 for i, ch in enumerate(pbar):
                     self.model.params = self.optimizer(self.model.params, self.model.gradient(x[i:i+1], y[i:i+1]))
-                    error = self.loss(self.model(x[0:i+1]), y[0:i+1])
-                    pbar.set_postfix({"loss": error})
+                    #error = self.loss(self.model(x[0:i+1]), y[0:i+1])
+                    #pbar.set_postfix({"loss": error})
             y_pred = self.model(x)
             error = self.loss(y_pred, y)
             self.losses.append(error)
@@ -95,7 +97,16 @@ class Trainer:
         logger.info("time: {}".format(interval))
         logger.info(message)
 
-    
+    def evaluate(self, x, y):
+        y_pred = self.model(x)
+        error = self.loss(y_pred, y)
+        if self.config.trainer.is_accuracy:
+            accuracy = self.accuracy(y_pred, y)
+            message = "Test loss:{}  Test accuracy:{}".format(error, accuracy)
+        else:
+            message = "Test loss:{}".format(error)
+        logger.info(message)
+
     def load_model(self):
         from model import NeuralODEModel
         model = NeuralODEModel(self.config)
@@ -115,7 +126,7 @@ class Trainer:
         rc = self.config.resource
         tc = self.config.trainer
         result_id = datetime.now().strftime("%Y%m%d-%H%M%S")
-        result_dir = os.path.join(rc.result_dir, "result_{}".format(result_id))
+        result_dir = os.path.join(rc.result_dir, "result_train_{}".format(result_id))
         os.makedirs(result_dir, exist_ok=True)
         result_path = os.path.join(result_dir, "learning_curve.csv")
         e = [i for i in range(1, tc.epoch+1)]
@@ -149,18 +160,22 @@ class Trainer:
     def load_dataset(self):
         data_path = self.config.resource.data_path
         if os.path.exists(data_path):
-            logger.debug("loding data from {}".format(data_path))
+            logger.debug("loading data from {}".format(data_path))
             with open(data_path, "rt") as f:
                 datasets = json.load(f)
-            train = datasets.get("Train")
-            validation = datasets.get("Validation")
-            x_train = np.array(train.get("Input"))
-            y_train = np.array(train.get("Output"))
+            x = datasets.get("Input")
+            y = datasets.get("Output")
+            if x is None or y is None:
+                raise TypeError("Dataset does not exists in {}".format(data_path))
+            if len(x[0]) != self.config.model.dim_in:
+                raise ValueError("Input dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_in, len(x[0])))
+            if len(y[0]) != self.config.model.dim_out:
+                raise ValueError("Output dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_out, len(y[0])))
+            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=self.config.trainer.test_size)
+            x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=self.config.trainer.validation_size)
             train = (x_train, y_train)
-            if validation is not None:
-                x_val = np.array(validation.get("Input"))
-                y_val = np.array(validation.get("Output"))
-                validation = (x_val, y_val)
-            return (train, validation)
+            validation = (x_val, y_val)
+            test = (x_test, y_test)
+            return (train, validation, test)
         else:
             raise FileNotFoundError("Dataset file can not loaded!")

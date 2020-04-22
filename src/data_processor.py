@@ -24,22 +24,13 @@ class DataProcessor:
     
     def create_dataset(self):
         logger.info("Create a new dataset")
-        n_train = 1000
-        n_val = 333
+        n_data = 100
         sigma = 0.
-        train = self.get_data(n_train, sigma)
-        validation = self.get_data(n_val, sigma)
-        #train = self.get_data3(n_train)
-        #validation = self.get_data3(n_val)
+        data = self.get_data(n_data, sigma)
+        #data = self.get_data3(n_data)
         dataset = {
-            "Train": {
-                "Input": train[0].tolist(),
-                "Output": train[1].tolist()
-            }, 
-            "Validation": {
-                "Input": validation[0].tolist(),
-                "Output": validation[1].tolist()
-            }
+            "Input": data[0].tolist(),
+            "Output": data[1].tolist()
         }
         return dataset
     

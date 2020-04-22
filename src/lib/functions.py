@@ -28,7 +28,7 @@ class Relu:
         return self.function(x)
     
     def derivative(self, x):
-        return d_function(x)
+        return self.d_function(x)
     
     def _relu(self, x):
         if x < 0.:

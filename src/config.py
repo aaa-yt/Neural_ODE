@@ -38,6 +38,8 @@ class Config:
             if read_trainer.get("Decay") is not None: self.trainer.decay = float(read_trainer.get("Decay"))
             if read_trainer.get("Decay2") is not None: self.trainer.decay2 = float(read_trainer.get("Decay2"))
             if read_trainer.get("Epoch") is not None: self.trainer.epoch = int(read_trainer.get("Epoch"))
+            if read_trainer.get("Test_size") is not None: self.trainer.test_size = float(read_trainer.get("Test_size"))
+            if read_trainer.get("Validation_size") is not None: self.trainer.validation_size = float(read_trainer.get("Validation_size"))
             if read_trainer.get("Is_visualize") is not None: self.trainer.is_visualize = bool(int(read_trainer.get("Is_visualize")))
             if read_trainer.get("Is_accuracy") is not None: self.trainer.is_accuracy = bool(int(read_trainer.get("Is_accuracy")))
     
@@ -57,6 +59,8 @@ class Config:
             "Decay": self.trainer.decay,
             "Decay2": self.trainer.decay2,
             "Epoch": self.trainer.epoch,
+            "Test_size": self.trainer.test_size,
+            "Validation_size": self.trainer.validation_size,
             "Is_visualize": int(self.trainer.is_visualize),
             "Is_accuracy": int(self.trainer.is_accuracy)
         }
@@ -89,8 +93,8 @@ class ResourceConfig:
 
 class ModelConfig:
     def __init__(self):
-        self.dim_in = 3
-        self.dim_out = 2
+        self.dim_in = 1
+        self.dim_out = 1
         self.max_time = 1.
         self.division = 100
         self.function_type = "sigmoid"
@@ -103,6 +107,8 @@ class TrainerConfig:
         self.momentum = 0.9
         self.decay = 0.99
         self.decay2 = 0.999
-        self.epoch = 50
+        self.epoch = 1
+        self.test_size = 0.2 #テストデータ = 全データ * test_size
+        self.validation_size = 0.2 # バリデーションデータ = 全データ * (1 - test_size) * validation_size
         self.is_visualize = True
-        self.is_accuracy = True
+        self.is_accuracy = False

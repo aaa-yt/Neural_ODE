@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
+from logging import getLogger
+
 from config import Config
+
+logger = getLogger(__name__)
 
 class Visualize:
     def __init__(self, config: Config):
@@ -84,6 +88,7 @@ class Visualize:
         if save_file is None:
             plt.show()
         else:
+            logger.debug("save plot of loss to {}".format(save_file))
             plt.savefig(save_file)
     
     def save_plot_accuracy(self, accuracies, xlabel=None, ylabel=None, title=None, save_file=None):
@@ -99,6 +104,7 @@ class Visualize:
         if save_file is None:
             plt.show()
         else:
+            logger.debug("save plot of accuracy to {}".format(save_file))
             plt.savefig(save_file)
     
     def save_plot_params(self, t, params, save_file=None):
@@ -136,7 +142,11 @@ class Visualize:
         ax_gamma.legend()
         ax_params.legend()
         if save_file is not None:
+            logger.debug("save plot of parameter0 (alpha) to {}".format(save_file[0]))
             fig_alpha.savefig(save_file[0])
+            logger.debug("save plot of parameter1 (beta) to {}".format(save_file[1]))
             fig_beta.savefig(save_file[1])
+            logger.debug("save plot of parameter2 (gamma) to {}".format(save_file[2]))
             fig_gamma.savefig(save_file[2])
+            logger.debug("save plot of parameters to {}".format(save_file[3]))
             fig_params.savefig(save_file[3])

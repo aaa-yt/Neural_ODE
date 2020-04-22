@@ -33,20 +33,19 @@ class NeuralODEModel:
     def gradient(self, x0, y_true):
         def func(t, a, params, A, function, x):
             index = int(t * (len(params[0]) - 1))
-            return [np.dot(a[0], params[1][index]) + np.dot(a[1] * params[0][index] * function(np.dot(x[index][0], A.T)), A), np.zeros_like(x[-1][1])]
+            return [-np.dot(a[0], params[1][index]) - np.dot(a[1] * params[0][index] * function(np.dot(x[index][0], A.T)), A), np.zeros_like(x[-1][1])]
         
         y_pred = self(x0)
         aT = np.zeros_like(x0)
         bT = y_pred - y_true
         #a = odeint(func, self.t[::-1], [aT, bT], args=(self.params, self.A, self.d_function, self.x))
         a = euler(func, self.t[::-1], [aT, bT], args=(self.params, self.A, self.d_function, self.x))
-        _a0 = np.array(list(map(lambda x: x[0], a))).astype(np.float32)
-        _a1 = np.array(list(map(lambda x: x[1], a))).astype(np.float32)
-        _x0 = np.array(list(map(lambda x: x[0], self.x))).astype(np.float32)
+        _a0 = np.array(list(map(lambda x: x[0], a)))[::-1].astype(np.float32)
+        _a1 = np.array(list(map(lambda x: x[1], a)))[::-1].astype(np.float32)
+        _x0 = np.array(list(map(lambda x: x[0], self.x)))[::-1].astype(np.float32)
         g_alpha = np.einsum("ijk,ijk->ik", _a1, self.function(np.dot(_x0, self.A.T)).astype(np.float32))
-        #g_alpha = np.einsum("ijk,ijk->ik", a[:,1].astype(np.float32), self.function(np.dot(self.x[:,0], self.A.T)).astype(np.float32))
         g_beta = np.einsum("ilj,ilk->ijk", _a0, _x0)
-        g_gamma = _a0[0]
+        g_gamma = _a0[:,0]
         return [g_alpha, g_beta, g_gamma]
     
     def load(self, model_path):
@@ -54,7 +53,6 @@ class NeuralODEModel:
             logger.debug("loding model from {}".format(model_path))
             with open(model_path, "rt") as f:
                 model_weights = json.load(f)
-            mc = self.config.model
             alpha = np.array(model_weights.get("Alpha"))
             beta = np.array(model_weights.get("Beta"))
             gamma = np.array(model_weights.get("Gamma"))
