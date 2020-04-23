@@ -132,12 +132,12 @@ if __name__ == "__main__":
         "Momentum": 0.9,
         "Decay": 0.9,
         "Decay2": 0.999,
-        "Epoch": 10,
+        "Epoch": 10000,
         "Test_size": 0.2,
         "Validation_size": 0.2,
         "Is_visualize": 1,
         "Is_accuracy": 1,
-        "N_data": 20,
+        "N_data": 2000,
         "Data_variance": 0.05
     }
 
