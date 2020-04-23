@@ -110,7 +110,7 @@ if __name__ == "__main__":
         "Is_visualize": 1,
         "Is_accuracy": 0,
         "N_data": 2000,
-        "Data_variance": 0.01
+        "Data_variance": 0.001
     }
 
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

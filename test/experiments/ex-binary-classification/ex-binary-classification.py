@@ -127,8 +127,8 @@ if __name__ == "__main__":
         "Maximum_time": 1.0,
         "Weights_division": 100,
         "Function_type": "sigmoid",
-        "Optimizer_type": "Adam",
-        "Learning_rate": 0.001,
+        "Optimizer_type": "Momentum",
+        "Learning_rate": 0.01,
         "Momentum": 0.9,
         "Decay": 0.9,
         "Decay2": 0.999,
@@ -137,8 +137,7 @@ if __name__ == "__main__":
         "Validation_size": 0.2,
         "Is_visualize": 1,
         "Is_accuracy": 1,
-        "N_data": 2000,
-        "Data_variance": 0.05
+        "N_data": 5000
     }
 
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
