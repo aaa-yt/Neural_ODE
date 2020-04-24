@@ -34,12 +34,9 @@ class Momentum(Optimizer):
     
     def __call__(self, params, g_params):
         new_params = []
-        new_v = []
         for param, g_param, v in zip(params, g_params, self.v):
-            g = self.momentum * v - self.rate * g_param
-            new_v.append(g)
-            new_params.append(param + g)
-        self.v = new_v
+            new_params.append(param + self.momentum * (param - v) - self.rate * g_param)
+        self.v = params
         return new_params
 
 class AdaGrad(Optimizer):
