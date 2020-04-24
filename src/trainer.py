@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from config import Config
 from lib import optimizers
-from model import mean_square_error, accuracy
+from model import mean_square_error, cross_entropy, accuracy
 from visualize import Visualize
 
 logger = getLogger(__name__)
@@ -36,7 +36,7 @@ class Trainer:
         tc = self.config.trainer
         self.compile_model()
         self.dataset = self.load_dataset()
-        self.fit(x=self.dataset[0][0], y=self.dataset[0][1], epochs=tc.epoch, validation_data=self.dataset[1], is_visualize=tc.is_visualize, is_accuracy=tc.is_accuracy)
+        self.fit(x=self.dataset[0][0], y=self.dataset[0][1], epochs=tc.epoch, batch_size=tc.batch_size, validation_data=self.dataset[1], is_visualize=tc.is_visualize, is_accuracy=tc.is_accuracy)
         self.evaluate(self.dataset[2][0], self.dataset[2][1])
         self.save_model()
         self.save_result()
@@ -46,7 +46,7 @@ class Trainer:
         self.loss = mean_square_error
         self.accuracy = accuracy
     
-    def fit(self, x=None, y=None, epochs=1, validation_data=None, is_shuffle=True, is_visualize=False, is_accuracy=False):
+    def fit(self, x=None, y=None, epochs=1, batch_size=1, validation_data=None, is_shuffle=True, is_visualize=False, is_accuracy=False):
         if x is None or y is None:
             raise ValueError("There is no fitting data")
         n_train = len(x)
@@ -60,9 +60,9 @@ class Trainer:
         for epoch in range(epochs):
             if is_shuffle:
                 x, y = shuffle(x, y)
-            with tqdm(range(n_train), desc="[Epoch: {}]".format(epoch+1)) as pbar:
+            with tqdm(range(0, n_train, batch_size), desc="[Epoch: {}]".format(epoch+1)) as pbar:
                 for i, ch in enumerate(pbar):
-                    self.model.params = self.optimizer(self.model.params, self.model.gradient(x[i:i+1], y[i:i+1]))
+                    self.model.params = self.optimizer(self.model.params, self.model.gradient(x[i:i+batch_size], y[i:i+batch_size]))
                     #error = self.loss(self.model(x[0:i+1]), y[0:i+1])
                     #pbar.set_postfix({"loss": error})
             y_pred = self.model(x)

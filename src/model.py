@@ -35,9 +35,10 @@ class NeuralODEModel:
             index = int(t * (len(params[0]) - 1))
             return [-np.dot(a[0], params[1][index]) - np.dot(a[1] * params[0][index] * function(np.dot(x[index][0], A.T)), A), np.zeros_like(x[-1][1])]
         
+        n_data = len(x0)
         y_pred = self(x0)
         aT = np.zeros_like(x0)
-        bT = y_pred - y_true
+        bT = (y_pred - y_true) / n_data 
         #a = odeint(func, self.t[::-1], [aT, bT], args=(self.params, self.A, self.d_function, self.x))
         a = euler(func, self.t[::-1], [aT, bT], args=(self.params, self.A, self.d_function, self.x))
         _a0 = np.array(list(map(lambda x: x[0], a)))[::-1].astype(np.float32)
@@ -45,7 +46,7 @@ class NeuralODEModel:
         _x0 = np.array(list(map(lambda x: x[0], self.x)))[::-1].astype(np.float32)
         g_alpha = np.einsum("ijk,ijk->ik", _a1, self.function(np.dot(_x0, self.A.T)).astype(np.float32))
         g_beta = np.einsum("ilj,ilk->ijk", _a0, _x0)
-        g_gamma = _a0[:,0]
+        g_gamma = np.einsum("ijk->ik", _a0)
         return [g_alpha, g_beta, g_gamma]
     
     def load(self, model_path):
@@ -76,9 +77,11 @@ class NeuralODEModel:
             json.dump(model_data, f, indent=4)
 
 
-
 def mean_square_error(y_pred, y_true):
-    return np.mean(np.square(y_pred - y_true)) * 0.5
+    return np.mean(np.sum(np.square(y_pred - y_true), 1)) * 0.5
+
+def cross_entropy(y_pred, y_true):
+    return -np.mean(np.sum(y_true * np.log(y_pred + 1.), 1))
 
 def accuracy(y_pred, y_true):
     if len(y_true[0]) == 1:

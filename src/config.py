@@ -38,6 +38,7 @@ class Config:
             if read_trainer.get("Decay") is not None: self.trainer.decay = float(read_trainer.get("Decay"))
             if read_trainer.get("Decay2") is not None: self.trainer.decay2 = float(read_trainer.get("Decay2"))
             if read_trainer.get("Epoch") is not None: self.trainer.epoch = int(read_trainer.get("Epoch"))
+            if read_trainer.get("Batch_size") is not None: self.trainer.batch_size = int(read_trainer.get("Batch_size"))
             if read_trainer.get("Test_size") is not None: self.trainer.test_size = float(read_trainer.get("Test_size"))
             if read_trainer.get("Validation_size") is not None: self.trainer.validation_size = float(read_trainer.get("Validation_size"))
             if read_trainer.get("Is_visualize") is not None: self.trainer.is_visualize = bool(int(read_trainer.get("Is_visualize")))
@@ -59,6 +60,7 @@ class Config:
             "Decay": self.trainer.decay,
             "Decay2": self.trainer.decay2,
             "Epoch": self.trainer.epoch,
+            "Batch_size": self.trainer.batch_size,
             "Test_size": self.trainer.test_size,
             "Validation_size": self.trainer.validation_size,
             "Is_visualize": int(self.trainer.is_visualize),
@@ -108,6 +110,7 @@ class TrainerConfig:
         self.decay = 0.99
         self.decay2 = 0.999
         self.epoch = 1
+        self.batch_size = 10
         self.test_size = 0.2 #テストデータ = 全データ * test_size
         self.validation_size = 0.2 # バリデーションデータ = 全データ * (1 - test_size) * validation_size
         self.is_visualize = True
