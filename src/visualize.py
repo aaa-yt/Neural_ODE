@@ -1,5 +1,5 @@
-import matplotlib.pyplot as plt
 from logging import getLogger
+import matplotlib.pyplot as plt
 
 from config import Config
 
@@ -74,7 +74,7 @@ class Visualize:
         self.fig_realtime.suptitle('Epoch: {}'.format(epoch[-1]))
         self.fig_realtime.subplots_adjust(top=0.92)
         plt.draw()
-        plt.pause(0.000000001)
+        plt.pause(0.0000000001)
     
     def save_plot_loss(self, losses, xlabel=None, ylabel=None, title=None, save_file=None):
         plt.clf()

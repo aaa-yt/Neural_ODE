@@ -70,7 +70,6 @@ class Config:
             config_parser.write(f)
 
 
-
 class ResourceConfig:
     def __init__(self):
         self.project_dir = os.environ.get("PROJECT_DIR", _project_dir())
@@ -91,7 +90,6 @@ class ResourceConfig:
             if not os.path.exists(dir):
                 os.makedirs(dir)
             
-
 
 class ModelConfig:
     def __init__(self):

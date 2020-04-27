@@ -1,9 +1,8 @@
 import argparse
-
 from logging import getLogger
 
-from lib.logger import setup_logger
 from config import Config
+from lib.logger import setup_logger
 
 logger = getLogger(__name__)
 
@@ -14,7 +13,6 @@ def create_parser():
     parser.add_argument("cmd", help="What to do 'predict' or 'train'.", choices=CMD_LIST)
     parser.add_argument("-n", "--new", help="Create a new dataset.", action="store_true")
     return parser
-
 
 def setup(config: Config, args):
     config.resource.create_directories()
@@ -39,6 +37,3 @@ def start():
     elif args.cmd == 'predict':
         import model_api
         return model_api.start(config)
-
-
-    

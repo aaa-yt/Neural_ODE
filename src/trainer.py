@@ -4,14 +4,14 @@ import time
 import csv
 from datetime import datetime
 from logging import getLogger
+from tqdm import tqdm
 import numpy as np
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm
 
 from config import Config
+from model import mean_square_error, accuracy
 from lib import optimizers
-from model import mean_square_error, cross_entropy, accuracy
 from visualize import Visualize
 
 logger = getLogger(__name__)
@@ -26,12 +26,12 @@ class Trainer:
         self.model = None
         self.dataset = None
         self.optimizer = None
-        self.visualize = Visualize(config)
-    
+        if config.trainer.is_visualize: self.visualize = Visualize(config)
+
     def start(self):
         self.model = self.load_model()
         self.training()
-
+    
     def training(self):
         tc = self.config.trainer
         self.compile_model()
@@ -63,8 +63,6 @@ class Trainer:
             with tqdm(range(0, n_train, batch_size), desc="[Epoch: {}]".format(epoch+1)) as pbar:
                 for i, ch in enumerate(pbar):
                     self.model.params = self.optimizer(self.model.params, self.model.gradient(x[i:i+batch_size], y[i:i+batch_size]))
-                    #error = self.loss(self.model(x[0:i+1]), y[0:i+1])
-                    #pbar.set_postfix({"loss": error})
             y_pred = self.model(x)
             error = self.loss(y_pred, y)
             self.losses.append(error)
@@ -96,7 +94,7 @@ class Trainer:
         logger.info("end of training")
         logger.info("time: {}".format(interval))
         logger.info(message)
-
+    
     def evaluate(self, x, y):
         y_pred = self.model(x)
         error = self.loss(y_pred, y)
@@ -106,7 +104,7 @@ class Trainer:
         else:
             message = "Test loss:{}".format(error)
         logger.info(message)
-
+    
     def load_model(self):
         from model import NeuralODEModel
         model = NeuralODEModel(self.config)
@@ -121,7 +119,30 @@ class Trainer:
         config_path = os.path.join(model_dir, "parameter.conf")
         model_path = os.path.join(model_dir, "model.json")
         self.model.save(config_path, model_path)
-
+    
+    def load_dataset(self):
+        data_path = self.config.resource.data_path
+        if os.path.exists(data_path):
+            logger.debug("loading data from {}".format(data_path))
+            with open(data_path, "rt") as f:
+                datasets = json.load(f)
+            x = datasets.get("Input")
+            y = datasets.get("Output")
+            if x is None or y is None:
+                raise TypeError("Dataset does not exists in {}".format(data_path))
+            if len(x[0]) != self.config.model.dim_in:
+                raise ValueError("Input dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_in, len(x[0])))
+            if len(y[0]) != self.config.model.dim_out:
+                raise ValueError("Output dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_out, len(y[0])))
+            x_train, x_test, y_train, y_test = train_test_split(np.array(x, dtype=np.float32), np.array(y, dtype=np.float32), test_size=self.config.trainer.test_size)
+            x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=self.config.trainer.validation_size)
+            train = (x_train, y_train)
+            validation = (x_val, y_val)
+            test = (x_test, y_test)
+            return (train, validation, test)
+        else:
+            raise FileNotFoundError("Dataset file can not loaded!")
+    
     def save_result(self):
         rc = self.config.resource
         tc = self.config.trainer
@@ -155,27 +176,3 @@ class Trainer:
             writer.writerows(list(zip(*result_csv)))
         save_params_path = [os.path.join(result_dir, "alpha.png"), os.path.join(result_dir, "beta.png"), os.path.join(result_dir, "gamma.png"), os.path.join(result_dir, "params.png")]
         self.visualize.save_plot_params(self.model.t, self.model.params, save_file=save_params_path)
-
- 
-    def load_dataset(self):
-        data_path = self.config.resource.data_path
-        if os.path.exists(data_path):
-            logger.debug("loading data from {}".format(data_path))
-            with open(data_path, "rt") as f:
-                datasets = json.load(f)
-            x = datasets.get("Input")
-            y = datasets.get("Output")
-            if x is None or y is None:
-                raise TypeError("Dataset does not exists in {}".format(data_path))
-            if len(x[0]) != self.config.model.dim_in:
-                raise ValueError("Input dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_in, len(x[0])))
-            if len(y[0]) != self.config.model.dim_out:
-                raise ValueError("Output dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_out, len(y[0])))
-            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=self.config.trainer.test_size)
-            x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=self.config.trainer.validation_size)
-            train = (x_train, y_train)
-            validation = (x_val, y_val)
-            test = (x_test, y_test)
-            return (train, validation, test)
-        else:
-            raise FileNotFoundError("Dataset file can not loaded!")

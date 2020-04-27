@@ -14,9 +14,10 @@ class Sigmoid:
     
     def _sigmoid(self, x):
         return 1. / (1. + np.exp(-self.gain * x))
-    
+
     def _derivative_sigmoid(self, x):
         return self.gain * self._sigmoid(x) * (1. - self._sigmoid(x))
+
 
 class Relu:
     def __init__(self, gain=1.):
@@ -29,16 +30,15 @@ class Relu:
     
     def derivative(self, x):
         return self.d_function(x)
-    
+
     def _relu(self, x):
-        if x < 0.:
+        if x < 0:
             return 0.
         else:
             return self.gain * x
-    
+
     def _derivative_relu(self, x):
-        if x < 0.:
+        if x < 0:
             return 0.
         else:
             return self.gain
-

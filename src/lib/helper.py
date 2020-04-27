@@ -2,7 +2,6 @@ import numpy as np
 
 from .functions import Sigmoid, Relu
 
-
 def string_to_function(function_type):
     all_functions = {
         "sigmoid": Sigmoid(),
@@ -14,10 +13,10 @@ def string_to_function(function_type):
     else:
         return all_functions["sigmoid"], all_functions["sigmoid"].derivative
 
-def euler(func, t, x0, args=None):
+def euler(func, x0, t, args=None):
     solution = [x0]
     x = x0
     for i, dt in enumerate(np.diff(t)):
-        x = list(map(lambda a, b: a+b, x, list(map(lambda a: a*dt, func(t[i], x, *args)))))
+        x = x + dt * func(x, t[i], *args)
         solution.append(x)
-    return solution
+    return np.array(solution, dtype=np.float32)

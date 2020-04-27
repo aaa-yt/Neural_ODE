@@ -30,22 +30,23 @@ def create_config_file(config, config_path):
     }
     with open(config_path, "wt") as f:
         config_parser.write(f)
-    
+
 def create_data_file(config, data_path):
-    def function(x):
-        return np.sin(4. * np.pi * x)
-    
-    x, y = [], []
-    for i in np.linspace(0., 1., config["N_data"]):
-        x.append([i])
-        y.append([function(i) + np.random.normal(0., config["Data_variance"])])
+    import chainer
+    train, test = chainer.datasets.get_mnist()
+    x_train, y_train = train._datasets
+    x_test, y_test = test._datasets
+    x = np.concatenate([x_train, x_test])
+    y = np.concatenate([y_train, y_test])
+    n_labels = len(np.unique(y))
+    y = np.eye(n_labels)[y]
     dataset = {
-        "Input": x,
-        "Output": y
+        "Input": x.tolist(),
+        "Output": y.tolist()
     }
     with open(data_path, "wt") as f:
         json.dump(dataset, f, indent=4)
-    
+
 def setting_file(path):
     if not os.path.exists(path["Config_dir"]):
         os.makedirs(path["Config_dir"])
@@ -66,26 +67,6 @@ def copy_result(path):
             shutil.move(result_path, path["Ex_result_dir"])
     shutil.move(path["Model_path"], path["Ex_dir"])
 
-def plot_predict(path):
-    dataset = load_dataset(path["Data_path"], path["Data_predict_path"])
-    plt.plot(dataset[0], dataset[1], label="Train")
-    plt.plot(dataset[0], dataset[2], label="Predict")
-    plt.xlabel(r'$x$')
-    plt.ylabel(r'$y$')
-    plt.title(r'Regression problem for $y=\sin4\pi x$')
-    plt.legend()
-    plt.savefig(os.path.join(path["Ex_result_dir"], "data_predict.png"))
-
-def load_dataset(data_path, data_predict_path):
-    with open(data_path, "rt") as f:
-        data = json.load(f)
-    with open(data_predict_path, "rt") as f:
-        data_predict = json.load(f)
-    x = data.get("Input")
-    y = data.get("Output")
-    y_pred = data_predict.get("Output")
-    return (x, y, y_pred)
-
 def clear(path):
     shutil.rmtree(path["Data_dir"])
     shutil.rmtree(path["Config_dir"])
@@ -93,24 +74,22 @@ def clear(path):
 
 if __name__ == "__main__":
     config = {
-        "Input_dimension": 1,
-        "Output_dimension": 1,
+        "Input_dimension": 784,
+        "Output_dimension": 10,
         "Maximum_time": 1.0,
         "Weights_division": 100,
         "Function_type": "sigmoid",
-        "Optimizer_type": "SGD",
-        "Learning_rate": 0.01,
+        "Optimizer_type": "Adam",
+        "Learning_rate": 0.001,
         "Momentum": 0.9,
-        "Decay": 0.99,
+        "Decay": 0.9,
         "Decay2": 0.999,
         "Epoch": 10000,
-        "Batch_size": 10,
+        "Batch_size": 100,
         "Test_size": 0.1,
         "Validation_size": 0.1,
         "Is_visualize": 1,
-        "Is_accuracy": 0,
-        "N_data": 2000,
-        "Data_variance": 0.001
+        "Is_accuracy": 1
     }
 
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -124,7 +103,7 @@ if __name__ == "__main__":
     result_dir = os.path.join(data_dir, "result")
     program_path = os.path.join(os.path.join(project_dir, "src"), "run.py")
     test_dir = os.path.join(project_dir, "test")
-    ex_dir = os.path.join(os.path.join(test_dir, "experiments"), "ex-regression")
+    ex_dir = os.path.join(os.path.join(test_dir, "experiments"), "ex-mnist-classification")
     ex_data_path = os.path.join(ex_dir, "data.json")
     ex_config_path = os.path.join(ex_dir, "parameter.conf")
     ex_result_dir = os.path.join(ex_dir, "result")
@@ -150,11 +129,12 @@ if __name__ == "__main__":
     }
 
     create_config_file(config, ex_config_path)
+    subprocess.call(["python", "-m", "pip", "install", "chainer"])
+    create_config_file(config, ex_config_path)
     create_data_file(config, ex_data_path)
     setting_file(path)
     subprocess.call(["python", program_path, "train"])
     shutil.copy(os.path.join(os.path.join(model_dir, os.listdir(model_dir)[0]), "model.json"), model_path)
     subprocess.call(["python", program_path, "predict"])
     copy_result(path)
-    plot_predict(path)
     clear(path)

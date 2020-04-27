@@ -30,22 +30,26 @@ def create_config_file(config, config_path):
     }
     with open(config_path, "wt") as f:
         config_parser.write(f)
-    
+
 def create_data_file(config, data_path):
-    def function(x):
-        return np.sin(4. * np.pi * x)
-    
     x, y = [], []
-    for i in np.linspace(0., 1., config["N_data"]):
-        x.append([i])
-        y.append([function(i) + np.random.normal(0., config["Data_variance"])])
+    while len(x) < int(config["N_data"] / 2):
+        xx = np.random.rand(config["Input_dimension"])
+        if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) < 0.3 * 0.3:
+            x.append(xx.tolist())
+            y.append([0.])
+    while len(x) < config["N_data"]:
+        xx = np.random.rand(config["Input_dimension"])
+        if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) > 0.3 * 0.3:
+            x.append(xx.tolist())
+            y.append([1.])
     dataset = {
         "Input": x,
         "Output": y
     }
     with open(data_path, "wt") as f:
         json.dump(dataset, f, indent=4)
-    
+
 def setting_file(path):
     if not os.path.exists(path["Config_dir"]):
         os.makedirs(path["Config_dir"])
@@ -68,13 +72,38 @@ def copy_result(path):
 
 def plot_predict(path):
     dataset = load_dataset(path["Data_path"], path["Data_predict_path"])
-    plt.plot(dataset[0], dataset[1], label="Train")
-    plt.plot(dataset[0], dataset[2], label="Predict")
-    plt.xlabel(r'$x$')
-    plt.ylabel(r'$y$')
-    plt.title(r'Regression problem for $y=\sin4\pi x$')
-    plt.legend()
-    plt.savefig(os.path.join(path["Ex_result_dir"], "data_predict.png"))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    fig_origin = plt.figure()
+    ax_origin = fig_origin.add_subplot(111)
+    fig_predict = plt.figure()
+    ax_predict = fig_predict.add_subplot(111)
+    x = np.array(dataset[0])
+    y_true = np.array(dataset[1])[:,0]
+    y_pred = np.where(np.array(dataset[2])<0.5, 0, 1)[:,0]
+    ax.scatter(x[np.where((y_pred==1) & (y_true==1))[0]][:, 0], x[np.where((y_pred==1) & (y_true==1))[0]][:, 1], s=10, c='#ff0000', label=r'$F(\xi)=1,y(T;\xi)\geq0.5$')
+    ax.scatter(x[np.where((y_pred==0) & (y_true==0))[0]][:, 0], x[np.where((y_pred==0) & (y_true==0))[0]][:, 1], s=10, c='#0000ff', label=r'$F(\xi)=0,y(T;\xi)<0.5$')
+    ax.scatter(x[np.where((y_pred==0) & (y_true==1))[0]][:, 0], x[np.where((y_pred==0) & (y_true==1))[0]][:, 1], s=10, c='#ffbbbb', label=r'$F(\xi)=1,y(T;\xi)<0.5$')
+    ax.scatter(x[np.where((y_pred==1) & (y_true==0))[0]][:, 0], x[np.where((y_pred==1) & (y_true==0))[0]][:, 1], s=10, c='#bbbbff', label=r'$F(\xi)=0,y(T;\xi)\geq0.5$')
+    ax_origin.scatter(x[np.where(y_true==1)[0]][:,0], x[np.where(y_true==1)[0]][:,1], s=10, c='#ff0000', label='1')
+    ax_origin.scatter(x[np.where(y_true==0)[0]][:,0], x[np.where(y_true==0)[0]][:,1], s=10, c='#0000ff', label='0')
+    ax_predict.scatter(x[np.where(y_pred==1)[0]][:,0], x[np.where(y_pred==1)[0]][:,1], s=10, c='#ff0000', label='1')
+    ax_predict.scatter(x[np.where(y_pred==0)[0]][:,0], x[np.where(y_pred==0)[0]][:,1], s=10, c='#0000ff', label='0')
+    ax.set_xlabel(r'$\xi_1$')
+    ax.set_ylabel(r'$\xi_2$')
+    ax.set_aspect('equal')
+    ax_origin.set_xlabel(r'$\xi_1$')
+    ax_origin.set_ylabel(r'$\xi_2$')
+    ax_origin.set_aspect('equal')
+    ax_origin.legend()
+    ax_predict.set_xlabel(r'$\xi_1$')
+    ax_predict.set_ylabel(r'$\xi_2$')
+    ax_predict.set_aspect('equal')
+    ax_predict.legend()
+    lgnd = ax.legend(loc="upper center", bbox_to_anchor=(0.5,-0.15), ncol=2)
+    fig.savefig(os.path.join(path["Ex_result_dir"], "data.png"), bbox_extra_artists=(lgnd,), bbox_inches='tight')
+    fig_origin.savefig(os.path.join(path["Ex_result_dir"], "data_origin.png"))
+    fig_predict.savefig(os.path.join(path["Ex_result_dir"], "data_predict.png"))
 
 def load_dataset(data_path, data_predict_path):
     with open(data_path, "rt") as f:
@@ -93,7 +122,7 @@ def clear(path):
 
 if __name__ == "__main__":
     config = {
-        "Input_dimension": 1,
+        "Input_dimension": 2,
         "Output_dimension": 1,
         "Maximum_time": 1.0,
         "Weights_division": 100,
@@ -101,16 +130,15 @@ if __name__ == "__main__":
         "Optimizer_type": "SGD",
         "Learning_rate": 0.01,
         "Momentum": 0.9,
-        "Decay": 0.99,
+        "Decay": 0.9,
         "Decay2": 0.999,
         "Epoch": 10000,
-        "Batch_size": 10,
+        "Batch_size": 100,
         "Test_size": 0.1,
         "Validation_size": 0.1,
         "Is_visualize": 1,
-        "Is_accuracy": 0,
-        "N_data": 2000,
-        "Data_variance": 0.001
+        "Is_accuracy": 1,
+        "N_data": 5000
     }
 
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -124,7 +152,7 @@ if __name__ == "__main__":
     result_dir = os.path.join(data_dir, "result")
     program_path = os.path.join(os.path.join(project_dir, "src"), "run.py")
     test_dir = os.path.join(project_dir, "test")
-    ex_dir = os.path.join(os.path.join(test_dir, "experiments"), "ex-regression")
+    ex_dir = os.path.join(os.path.join(test_dir, "experiments"), "ex-binary-classification")
     ex_data_path = os.path.join(ex_dir, "data.json")
     ex_config_path = os.path.join(ex_dir, "parameter.conf")
     ex_result_dir = os.path.join(ex_dir, "result")
