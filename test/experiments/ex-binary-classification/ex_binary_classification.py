@@ -32,20 +32,24 @@ def create_config_file(config, config_path):
         config_parser.write(f)
 
 def create_data_file(config, data_path):
-    x, y = [], []
-    while len(x) < int(config["N_data"] / 2):
-        xx = np.random.rand(config["Input_dimension"])
-        if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) < 0.3 * 0.3:
-            x.append(xx.tolist())
-            y.append([0.])
-    while len(x) < config["N_data"]:
-        xx = np.random.rand(config["Input_dimension"])
-        if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) > 0.3 * 0.3:
-            x.append(xx.tolist())
-            y.append([1.])
+    def get_data(n_data):
+        x, y = [], []
+        while len(x) < int(n_data / 2):
+            xx = np.random.rand(config["Input_dimension"])
+            if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) < 0.3 * 0.3:
+                x.append(xx.tolist())
+                y.append([0.])
+        while len(x) < n_data:
+            xx = np.random.rand(config["Input_dimension"])
+            if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) > 0.3 * 0.3:
+                x.append(xx.tolist())
+                y.append([1.])
+        return (x, y)
+        
+    data = get_data(config["N_data"])
     dataset = {
-        "Input": x,
-        "Output": y
+        "Input": data[0],
+        "Output": data[1]
     }
     with open(data_path, "wt") as f:
         json.dump(dataset, f, indent=4)
@@ -132,13 +136,13 @@ if __name__ == "__main__":
         "Momentum": 0.9,
         "Decay": 0.9,
         "Decay2": 0.999,
-        "Epoch": 10000,
+        "Epoch": 10,
         "Batch_size": 100,
         "Test_size": 0.1,
         "Validation_size": 0.1,
         "Is_visualize": 1,
         "Is_accuracy": 1,
-        "N_data": 5000
+        "N_data": 300
     }
 
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

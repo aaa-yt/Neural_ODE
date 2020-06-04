@@ -92,7 +92,7 @@ class Visualize:
             plt.savefig(save_file)
     
     def save_plot_accuracy(self, accuracies, xlabel=None, ylabel=None, title=None, save_file=None):
-        plt.cla()
+        plt.clf()
         if not self.config.trainer.is_accuracy: return
         epoch = [i for i in range(len(accuracies[0]))]
         if xlabel is not None: plt.xlabel(xlabel)
@@ -108,7 +108,7 @@ class Visualize:
             plt.savefig(save_file)
     
     def save_plot_params(self, t, params, save_file=None):
-        plt.cla()
+        plt.clf()
         alpha, beta, gamma = params
         fig_alpha = plt.figure()
         ax_alpha = fig_alpha.add_subplot(111)
