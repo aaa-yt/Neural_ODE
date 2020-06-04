@@ -45,7 +45,7 @@ class NeuralODEModel:
         y_pred = self(x0)
         aT = np.zeros_like(x0)
         bT = (y_pred - y_true) / n_data
-        a = euler(func, aT, self.t[::-1], args=(self.params, self.A, self.d_function, bT, self.x[::-1], self.division))
+        a = euler(func, aT, self.t[::-1], args=(self.params, self.A, self.d_function, bT, self.x, self.division))
         g_alpha = np.sum(bT * self.function(np.dot(self.x, self.A.T)), 1)
         g_beta = np.einsum("ilj,ilk->ijk", a[::-1], self.x)
         g_gamma = np.sum(a[::-1], 1)
