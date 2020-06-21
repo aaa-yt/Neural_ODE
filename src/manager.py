@@ -26,8 +26,8 @@ def start():
     setup(config, args)
 
     if args.new:
-        import data_processor
-        data_processor.start(config)
+        from data_processor import DataCreator
+        DataCreator(config).start()
 
     logger.info("command: {}".format(args.cmd))
 
