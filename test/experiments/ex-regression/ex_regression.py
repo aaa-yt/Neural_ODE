@@ -33,7 +33,7 @@ def create_config_file(config, config_path):
     
 def create_data_file(config, data_path):
     def function(x):
-        return np.sin(4. * np.pi * x)
+        return np.sin(2. * np.pi * x)
     
     x, y = [], []
     for i in np.linspace(0., 1., config["N_data"]):
@@ -96,21 +96,21 @@ if __name__ == "__main__":
         "Input_dimension": 1,
         "Output_dimension": 1,
         "Maximum_time": 1.0,
-        "Weights_division": 100,
-        "Function_type": "relu",
-        "Optimizer_type": "RMSprop",
+        "Weights_division": 90,
+        "Function_type": "sigmoid",
+        "Optimizer_type": "SGD",
         "Learning_rate": 0.01,
         "Momentum": 0.9,
         "Decay": 0.99,
         "Decay2": 0.999,
         "Epoch": 10000,
-        "Batch_size": 10,
+        "Batch_size": 32,
         "Test_size": 0.1,
-        "Validation_size": 0.1,
+        "Validation_size": 0.2,
         "Is_visualize": 1,
         "Is_accuracy": 0,
-        "N_data": 2000,
-        "Data_variance": 0.001
+        "N_data": 10000,
+        "Data_variance": 0.
     }
 
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

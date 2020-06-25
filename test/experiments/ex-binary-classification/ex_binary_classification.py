@@ -38,12 +38,12 @@ def create_data_file(config, data_path):
             xx = np.random.rand(config["Input_dimension"])
             if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) < 0.3 * 0.3:
                 x.append(xx.tolist())
-                y.append([0.])
+                y.append([1., 0.])
         while len(x) < n_data:
             xx = np.random.rand(config["Input_dimension"])
-            if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) > 0.3 * 0.3:
+            if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) > 0.4 * 0.4:
                 x.append(xx.tolist())
-                y.append([1.])
+                y.append([0., 1.])
         return (x, y)
         
     data = get_data(config["N_data"])
@@ -127,22 +127,22 @@ def clear(path):
 if __name__ == "__main__":
     config = {
         "Input_dimension": 2,
-        "Output_dimension": 1,
+        "Output_dimension": 2,
         "Maximum_time": 1.0,
-        "Weights_division": 100,
-        "Function_type": "sigmoid",
+        "Weights_division": 50,
+        "Function_type": "relu",
         "Optimizer_type": "SGD",
         "Learning_rate": 0.01,
         "Momentum": 0.9,
         "Decay": 0.9,
         "Decay2": 0.999,
         "Epoch": 10,
-        "Batch_size": 100,
+        "Batch_size": 32,
         "Test_size": 0.1,
-        "Validation_size": 0.1,
+        "Validation_size": 0.2,
         "Is_visualize": 1,
         "Is_accuracy": 1,
-        "N_data": 300
+        "N_data": 10000
     }
 
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
