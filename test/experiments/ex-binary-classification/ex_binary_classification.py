@@ -5,6 +5,7 @@ import configparser
 import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 def create_config_file(config, config_path):
     config_parser = configparser.ConfigParser()
@@ -32,24 +33,37 @@ def create_config_file(config, config_path):
         config_parser.write(f)
 
 def create_data_file(config, data_path):
+    if os.path.exists(data_path): return 
     def get_data(n_data):
         x, y = [], []
         while len(x) < int(n_data / 2):
             xx = np.random.rand(config["Input_dimension"])
             if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) < 0.3 * 0.3:
                 x.append(xx.tolist())
-                y.append([1., 0.])
+                y.append([0.])
         while len(x) < n_data:
             xx = np.random.rand(config["Input_dimension"])
-            if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) > 0.4 * 0.4:
+            if ((xx[0] - 0.5)**2 + (xx[1] - 0.5)**2) > 0.3 * 0.3:
                 x.append(xx.tolist())
-                y.append([0., 1.])
+                y.append([1.])
         return (x, y)
         
     data = get_data(config["N_data"])
+    x_train, x_test, y_train, y_test = train_test_split(data[0], data[1], test_size=config["Test_size"])
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=config["Validation_size"])
     dataset = {
-        "Input": data[0],
-        "Output": data[1]
+        "Train": {
+            "Input": x_train,
+            "Output": y_train
+        },
+        "Validation": {
+            "Input": x_val,
+            "Output": y_val
+        },
+        "Test": {
+            "Input": x_test,
+            "Output": y_test
+        }
     }
     with open(data_path, "wt") as f:
         json.dump(dataset, f, indent=4)
@@ -75,6 +89,38 @@ def copy_result(path):
     shutil.move(path["Model_path"], path["Ex_dir"])
 
 def plot_predict(path):
+    train, validation = load_dataset(path["Data_path"], path["Data_predict_path"])
+    x_train = train[0]
+    y_train = train[1]
+    x_val = validation[0]
+    y_val = validation[1]
+    y_pred = validation[2]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(x_val[:,0], x_val[:,1], s=5, c='white', edgecolor='black', label='Validation data')
+    ax.scatter(x_train[np.where(y_train==1)[0]][:,0], x_train[np.where(y_train==1)[0]][:,1], s=10, c='red', label=r'$F(\xi)=1$')
+    ax.scatter(x_train[np.where(y_train==0)[0]][:,0], x_train[np.where(y_train==0)[0]][:,1], s=10, c='blue', label=r'$F(\xi)=0$')
+    ax.set_xlabel(r'$\xi_1$')
+    ax.set_ylabel(r'$\xi_2$')
+    ax.set_aspect('equal')
+    lgnd = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
+    fig.savefig(os.path.join(path["Ex_result_dir"], "training-data.png"), bbox_extra_artists=(lgnd,), bbox_inches='tight')
+
+    fig_result = plt.figure()
+    ax_result = fig_result.add_subplot(111)
+    ax_result.scatter(x_val[np.where((y_val==1) & (y_pred==1))[0]][:,0], x_val[np.where((y_val==1) & (y_pred==1))[0]][:,1], s=10, c='#ff0000', label=r'$F(\xi)=1,y(T;\xi)\geq1$')
+    ax_result.scatter(x_val[np.where((y_val==0) & (y_pred==0))[0]][:,0], x_val[np.where((y_val==0) & (y_pred==0))[0]][:,1], s=10, c='#0000ff', label=r'$F(\xi)=0,y(T;\xi)\geq0$')
+    ax_result.scatter(x_val[np.where((y_val==0) & (y_pred==1))[0]][:,0], x_val[np.where((y_val==0) & (y_pred==1))[0]][:,1], s=10, c='#ffbbbb', label=r'$F(\xi)=0,y(T;\xi)\geq1$')
+    ax_result.scatter(x_val[np.where((y_val==1) & (y_pred==0))[0]][:,0], x_val[np.where((y_val==1) & (y_pred==0))[0]][:,1], s=10, c='#bbbbff', label=r'$F(\xi)=1,y(T;\xi)\geq0$')
+    ax_result.set_xlabel(r'$\xi_1$')
+    ax_result.set_ylabel(r'$\xi_2$')
+    ax.set_aspect('equal')
+    lgnd_result = ax_result.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
+    fig_result.savefig(os.path.join(path["Ex_result_dir"], "predict.png"), bbox_extra_artists=(lgnd_result,), bbox_inches='tight')
+
+
+def plot_predict_(path):
     dataset = load_dataset(path["Data_path"], path["Data_predict_path"])
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -109,15 +155,22 @@ def plot_predict(path):
     fig_origin.savefig(os.path.join(path["Ex_result_dir"], "data_origin.png"))
     fig_predict.savefig(os.path.join(path["Ex_result_dir"], "data_predict.png"))
 
+
+
 def load_dataset(data_path, data_predict_path):
     with open(data_path, "rt") as f:
         data = json.load(f)
     with open(data_predict_path, "rt") as f:
         data_predict = json.load(f)
-    x = data.get("Input")
-    y = data.get("Output")
-    y_pred = data_predict.get("Output")
-    return (x, y, y_pred)
+    x_train = np.array(data.get("Train").get("Input"))
+    y_train = np.array(data.get("Train").get("Output"))
+    y_pred_train = np.array(data_predict.get("Train").get("Output"))
+    x_val = np.array(data.get("Validation").get("Input"))
+    y_val = np.array(data.get("Validation").get("Output"))
+    y_pred_val = np.array(data_predict.get("Validation").get("Output"))
+    train = (x_train, y_train, y_pred_train)
+    validation = (x_val, y_val, y_pred_val)
+    return (train, validation)
 
 def clear(path):
     shutil.rmtree(path["Data_dir"])
@@ -127,22 +180,22 @@ def clear(path):
 if __name__ == "__main__":
     config = {
         "Input_dimension": 2,
-        "Output_dimension": 2,
+        "Output_dimension": 1,
         "Maximum_time": 1.0,
-        "Weights_division": 50,
-        "Function_type": "relu",
+        "Weights_division": 100,
+        "Function_type": "sigmoid",
         "Optimizer_type": "SGD",
         "Learning_rate": 0.01,
         "Momentum": 0.9,
         "Decay": 0.9,
         "Decay2": 0.999,
-        "Epoch": 10,
-        "Batch_size": 32,
-        "Test_size": 0.1,
+        "Epoch": 10000,
+        "Batch_size": 10,
+        "Test_size": 0.2,
         "Validation_size": 0.2,
         "Is_visualize": 1,
         "Is_accuracy": 1,
-        "N_data": 10000
+        "N_data": 15625
     }
 
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

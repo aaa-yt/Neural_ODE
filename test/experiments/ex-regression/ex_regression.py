@@ -5,6 +5,7 @@ import configparser
 import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 def create_config_file(config, config_path):
     config_parser = configparser.ConfigParser()
@@ -33,15 +34,27 @@ def create_config_file(config, config_path):
     
 def create_data_file(config, data_path):
     def function(x):
-        return np.sin(2. * np.pi * x)
+        return np.sin(np.pi * x)
     
     x, y = [], []
     for i in np.linspace(0., 1., config["N_data"]):
         x.append([i])
         y.append([function(i) + np.random.normal(0., config["Data_variance"])])
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=config["Test_size"])
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=config["Validation_size"])
     dataset = {
-        "Input": x,
-        "Output": y
+        "Train": {
+            "Input": x_train,
+            "Output": y_train
+        },
+        "Validation": {
+            "Input": x_val,
+            "Output": y_val
+        },
+        "Test": {
+            "Input": x_test,
+            "Output": y_test
+        }
     }
     with open(data_path, "wt") as f:
         json.dump(dataset, f, indent=4)
@@ -96,20 +109,20 @@ if __name__ == "__main__":
         "Input_dimension": 1,
         "Output_dimension": 1,
         "Maximum_time": 1.0,
-        "Weights_division": 90,
+        "Weights_division": 100,
         "Function_type": "sigmoid",
         "Optimizer_type": "SGD",
         "Learning_rate": 0.01,
         "Momentum": 0.9,
         "Decay": 0.99,
         "Decay2": 0.999,
-        "Epoch": 10000,
-        "Batch_size": 32,
-        "Test_size": 0.1,
+        "Epoch": 5,
+        "Batch_size": 8,
+        "Test_size": 0.2,
         "Validation_size": 0.2,
         "Is_visualize": 1,
         "Is_accuracy": 0,
-        "N_data": 10000,
+        "N_data": 15625,
         "Data_variance": 0.
     }
 

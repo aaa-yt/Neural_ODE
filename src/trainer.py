@@ -126,6 +126,26 @@ class Trainer:
             logger.debug("loading data from {}".format(data_path))
             with open(data_path, "rt") as f:
                 datasets = json.load(f)
+            x_train = datasets.get("Train", {}).get("Input")
+            y_train = datasets.get("Train", {}).get("Output")
+            x_val = datasets.get("Validation", {}).get("Input")
+            y_val = datasets.get("Validation", {}).get("Output")
+            x_test = datasets.get("Test", {}).get("Input")
+            y_test = datasets.get("Test", {}).get("Output")
+            if x_train is None or y_train is None:
+                raise TypeError("Dataset does not exists in {}".format(data_path))
+            if len(x_train[0]) != self.config.model.dim_in:
+                raise ValueError("Input dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_in, len(x_train[0])))
+            if len(y_train[0]) != self.config.model.dim_out:
+                raise ValueError("Output dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_out, len(y_train[0])))
+            if x_val is None or y_val is None or x_test is None or y_test is None:
+                x_train, x_test, y_train, y_test = train_test_split(np.array(x_train, dtype=np.float32), np.array(y_train, dtype=np.float32), test_size=self.config.trainer.test_size)
+                x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=self.config.trainer.validation_size)
+            train = (np.array(x_train, dtype=np.float32), np.array(y_train, dtype=np.float32))
+            validation = (np.array(x_val, dtype=np.float32), np.array(y_val, dtype=np.float32))
+            test = (np.array(x_test, dtype=np.float32), np.array(y_test, dtype=np.float32))
+
+            '''
             x = datasets.get("Input")
             y = datasets.get("Output")
             if x is None or y is None:
@@ -139,6 +159,7 @@ class Trainer:
             train = (x_train, y_train)
             validation = (x_val, y_val)
             test = (x_test, y_test)
+            '''
             return (train, validation, test)
         else:
             raise FileNotFoundError("Dataset file can not loaded!")
