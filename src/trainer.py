@@ -138,13 +138,9 @@ class Trainer:
                 raise ValueError("Input dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_in, len(x_train[0])))
             if len(y_train[0]) != self.config.model.dim_out:
                 raise ValueError("Output dimensions in config and dataset are not equal: {} != {}".format(self.config.model.dim_out, len(y_train[0])))
-            if x_val is None or y_val is None or x_test is None or y_test is None:
-                x_train, x_test, y_train, y_test = train_test_split(np.array(x_train, dtype=np.float32), np.array(y_train, dtype=np.float32), test_size=self.config.trainer.test_size)
-                x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=self.config.trainer.validation_size)
             train = (np.array(x_train, dtype=np.float32), np.array(y_train, dtype=np.float32))
             validation = (np.array(x_val, dtype=np.float32), np.array(y_val, dtype=np.float32))
             test = (np.array(x_test, dtype=np.float32), np.array(y_test, dtype=np.float32))
-
             '''
             x = datasets.get("Input")
             y = datasets.get("Output")
